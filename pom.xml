@@ -46,7 +46,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        org.demo.health.monitoring.GetHeap
+                                        org.demo.health.monitoring.Main
                                     </mainClass>
                                 </manifest>
                             </archive>
