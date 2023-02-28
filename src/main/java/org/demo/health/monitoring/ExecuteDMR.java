@@ -12,7 +12,7 @@ public class ExecuteDMR {
     private  String password;
 
     public ExecuteDMR(String host, int port, String user, String password){
-        this.host=host;
+        this.host = host;
         this.port = port;
         this.user = user;
         this.password = password;

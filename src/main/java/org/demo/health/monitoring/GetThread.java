@@ -4,6 +4,10 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 
 import java.io.IOException;
+import java.sql.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class GetThread {
     private ModelControllerClient client;
@@ -24,9 +28,23 @@ public class GetThread {
         return op;
     }
 
+    public ModelNode getSocketInfo(){
+        ModelNode op = new ModelNode();
+        op.get("operation").set("query");
+        ModelNode address = op.get("address");
+
+        address.add("socket-binding-group","standard-sockets");
+        address.add("socket-binding","*");
+        op.get("select").add("name").add("bound-port").add("bound-address");
+        op.get("where").add("bound","true");
+        op.get("operations").set(Boolean.TRUE);
+        return op;
+    }
+
     public void execute(){
         try {
             System.out.println(client.execute(getWorkerThreadInfo()).get("result").toJSONString(Boolean.TRUE));
+            System.out.println(client.execute(getSocketInfo()).get("result").toJSONString(Boolean.TRUE));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -12,7 +12,9 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <wildfly.version>18.1.2.Final</wildfly.version>
     </properties>
-    
+
+    <repositories>
+    </repositories>
     <dependencies>
         <dependency>
             <groupId>org.wildfly.core</groupId>
@@ -29,6 +31,7 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.13.3</version>
         </dependency>
+
     </dependencies>
     <build>
         <finalName>${project.name}</finalName>
