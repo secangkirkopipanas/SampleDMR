@@ -1,5 +1,6 @@
 package org.demo.health.monitoring;
 
+import org.demo.health.monitoring.keystore.CsvGenerator;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 
@@ -101,14 +102,19 @@ public class GetConnPool {
                     for (int i = 0; i < dsList.size(); i++) {
                         String dsname = dsList.get(i).toString().replaceAll("\"", "");
                         String jndiName = client.execute(getJndiName(dsname, dstype)).get("result").toString();
-                        System.out.println("{Test Connection Status: [" + jndiName + ": " + client.execute(testConnection(dsname, dstype)).get("result").asBoolean() + "]}");
+                        client.execute(testConnection(dsname, dstype)).get("result").asBoolean();
+
+                        CsvGenerator.getInstance().generateReport("{\"Jndi Name\":"+jndiName+",\"ConnectionStatus\":"+client.execute(testConnection(dsname,dstype)).get("result").asBoolean()+",\"Statistics Enabled\":" +client.execute(isStat(dsname)).get("result").asBoolean()+"}","ConnectionStatus");
+
                         if (client.execute(isStat(dsname)).get("result").asBoolean()) {
                             //System.out.println("Connection Pool Statistics of "+ dsname);
-                            System.out.println("{Statics " + jndiName + ": "
-                                    + client.execute(getStatistics(dsname, dstype)).get("result").toJSONString(Boolean.TRUE) + " }");
-                        } else {
-                            System.out.println("{Statistics is not enabled: " + jndiName + "}");
+                            //System.out.println("{Statics " + jndiName + ": "
+                            //        + client.execute(getStatistics(dsname, dstype)).get("result").toJSONString(Boolean.TRUE) + " }");
+                            CsvGenerator.getInstance().generateReport(client.execute(getStatistics(dsname, dstype)).get("result").toJSONString(Boolean.TRUE),"Connection Statistics");
                         }
+                        /*else {
+                            System.out.println("{Statistics is not enabled: " + jndiName + "}");
+                        }*/
                     }
                 }
             } catch (IOException e) {

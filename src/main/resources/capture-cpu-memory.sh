@@ -4,6 +4,7 @@ capture_openfile() {
   COUNT=$(lsof -p $PID | wc -l)
   echo "Open files: $COUNT"
 }
+
 capture_cpu() {
   UTIZ=$(mpstat | awk '{print $NF}' | tail -1 | cut -f 1 -d ".")
   if [ $UTIZ -lt 20 ]; then
@@ -15,6 +16,7 @@ capture_cpu() {
     done
   fi
 }
+
 capture_disk() {
   df -m | awk 'NF==1 {fs=$0} NF>1 && $(NF-1)+0 > 80 {print fs"\n"$0}'
 }

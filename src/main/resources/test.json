@@ -1,0 +1,12 @@
+{
+  "OsInfo": [
+    {
+      "name": "Mac OS X",
+      "arch": "aarch64",
+      "version": "13.2.1",
+      "available-processors": 8,
+      "system-load-average": 2.10009765625,
+      "object-name": "java.lang:type=OperatingSystem"
+    }
+  ]
+}

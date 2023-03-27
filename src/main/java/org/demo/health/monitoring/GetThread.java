@@ -1,5 +1,6 @@
 package org.demo.health.monitoring;
 
+import org.demo.health.monitoring.keystore.CsvGenerator;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 
@@ -43,8 +44,10 @@ public class GetThread {
 
     public void execute(){
         try {
-            System.out.println(client.execute(getWorkerThreadInfo()).get("result").toJSONString(Boolean.TRUE));
-            System.out.println(client.execute(getSocketInfo()).get("result").toJSONString(Boolean.TRUE));
+            //System.out.println(client.execute(getWorkerThreadInfo()).get("result").toJSONString(Boolean.TRUE));
+            System.out.println(client.execute(getSocketInfo()).get("result").toJSONString(true));
+            CsvGenerator.getInstance().generateReport(client.execute(getWorkerThreadInfo()).get("result").toJSONString(Boolean.TRUE),"Thread");
+            //CsvGenerator.getInstance().generateReport(client.execute(getSocketInfo()).get("result").toJSONString(Boolean.TRUE),"Socket");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
