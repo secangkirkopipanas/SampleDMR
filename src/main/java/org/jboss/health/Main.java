@@ -1,9 +1,20 @@
-package org.demo.health.monitoring;
+package org.jboss.health;
 
-import org.demo.health.monitoring.keystore.RetrieveCredential;
+import org.jboss.health.execute.ExecuteDMR;
+import org.jboss.health.jmx.JmxMBeanServerConnection;
+import org.jboss.health.stat.GetConnPool;
+import org.jboss.health.stat.GetHeap;
+import org.jboss.health.stat.GetThread;
+import org.jboss.health.osops.FileOperation;
+import org.jboss.health.execute.ConfigureTLS;
+import org.jboss.health.execute.DeployTLS;
+import org.jboss.health.execute.RetrieveCredential;
 import org.jboss.as.controller.client.ModelControllerClient;
 
+import javax.management.openmbean.TabularDataSupport;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -11,6 +22,7 @@ import java.util.Properties;
  */
 public class Main {
     private static Boolean captureJboss = false;
+    private static Boolean captureTomcat = false;
     private static Boolean credentialStore = false;
     private static String store = null;
     private static String alias = null;
@@ -40,6 +52,9 @@ public class Main {
             switch (args[i]) {
                 case "-captureJboss":
                     this.captureJboss = true;
+                    break;
+                case "-captureTomcat":
+                    this.captureTomcat = true;
                     break;
                 case "-deployTLS":
                     this.deployTLS = true;
@@ -174,6 +189,17 @@ public class Main {
             String tempfile = FileOperation.getInstance().createTempFile("capture-cpu-memory");
             FileOperation.getInstance().executeScript(tempfile);
             obj.deleteFile(tempfile);
+        }
+        if(captureTomcat){
+            if(PID != null){
+                System.out.println(PID);
+                //JmxMBeanServerConnection.getInstance(PID).queryObject("Catalina:type=Server","serverInfo");
+                //JmxMBeanServerConnection.getInstance(PID).queryObject("Catalina:type=Connector,*","port");
+                //JmxMBeanServerConnection.getInstance(PID).queryObject("Catalina:type=ThreadPool,*","connectionTimeout");
+                TabularDataSupport tds = (javax.management.openmbean.TabularDataSupport) JmxMBeanServerConnection.getInstance(PID).queryObject("java.lang:type=Runtime", "SystemProperties");
+                System.out.println(tds.keySet());
+
+            }
         }
     }
 

@@ -1,6 +1,5 @@
-package org.demo.health.monitoring;
+package org.jboss.health.execute;
 
-import org.demo.health.monitoring.keystore.CreateKeyStore;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 

@@ -1,4 +1,4 @@
-package org.demo.health.monitoring;
+package org.jboss.health.osops;
 
 import com.sun.management.OperatingSystemMXBean;
 

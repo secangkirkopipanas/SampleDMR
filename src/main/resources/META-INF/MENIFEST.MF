@@ -1,2 +1,2 @@
 Manifest-Version: 1.0
-Main-Class: org.demo.health.monitoring.Main
+Main-Class: org.jboss.health.Main

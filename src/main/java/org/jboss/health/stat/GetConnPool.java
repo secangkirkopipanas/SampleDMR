@@ -1,6 +1,6 @@
-package org.demo.health.monitoring;
+package org.jboss.health.stat;
 
-import org.demo.health.monitoring.keystore.CsvGenerator;
+import org.jboss.health.report.CsvGenerator;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 

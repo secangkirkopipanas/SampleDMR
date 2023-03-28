@@ -1,4 +1,4 @@
-package org.demo.health.monitoring;
+package org.jboss.health.execute;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;

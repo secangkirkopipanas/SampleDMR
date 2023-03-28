@@ -1,13 +1,10 @@
-package org.demo.health.monitoring;
+package org.jboss.health.stat;
 
-import com.sun.management.OperatingSystemMXBean;
-import org.demo.health.monitoring.keystore.CsvGenerator;
+import org.jboss.health.report.CsvGenerator;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 
-import java.io.File;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
 
 public class GetHeap {
     private ModelControllerClient client;

@@ -1,4 +1,4 @@
-package org.demo.health.monitoring.keystore;
+package org.jboss.health.execute;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
