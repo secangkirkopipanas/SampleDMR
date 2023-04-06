@@ -1,4 +1,4 @@
-package org.jboss.health.execute;
+package org.health.jboss.execute;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

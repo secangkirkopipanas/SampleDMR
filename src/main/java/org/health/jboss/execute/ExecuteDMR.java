@@ -1,4 +1,4 @@
-package org.jboss.health.execute;
+package org.health.jboss.execute;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;

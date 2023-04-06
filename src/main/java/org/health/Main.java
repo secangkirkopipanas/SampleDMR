@@ -1,20 +1,17 @@
-package org.jboss.health;
+package org.health;
 
-import org.jboss.health.execute.ExecuteDMR;
-import org.jboss.health.jmx.JmxMBeanServerConnection;
-import org.jboss.health.stat.GetConnPool;
-import org.jboss.health.stat.GetHeap;
-import org.jboss.health.stat.GetThread;
-import org.jboss.health.osops.FileOperation;
-import org.jboss.health.execute.ConfigureTLS;
-import org.jboss.health.execute.DeployTLS;
-import org.jboss.health.execute.RetrieveCredential;
+import org.health.jboss.execute.ConfigureTLS;
+import org.health.jboss.execute.DeployTLS;
+import org.health.jboss.execute.ExecuteDMR;
+import org.health.jboss.execute.RetrieveCredential;
+import org.health.jboss.osops.FileOperation;
+import org.health.jboss.stats.GetConnPool;
+import org.health.jboss.stats.GetHeap;
+import org.health.jboss.stats.GetThread;
+import org.health.tomcat.JmxMBeanServerConnection;
 import org.jboss.as.controller.client.ModelControllerClient;
 
-import javax.management.openmbean.TabularDataSupport;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 /**
@@ -63,13 +60,13 @@ public class Main {
                     this.credentialStore = true;
                     break;
                 case "-store":
-                    this.store = parseStringArgument("-store",args,++i);
+                    this.store = parseStringArgument("-store", args, ++i);
                     break;
                 case "-storepass":
-                    this.storepass = parseStringArgument("-storepass",args,++i);
+                    this.storepass = parseStringArgument("-storepass", args, ++i);
                     break;
                 case "-alias":
-                    this.alias = parseStringArgument("-alias",args,++i);
+                    this.alias = parseStringArgument("-alias", args, ++i);
                     break;
                 case "-H":
                     this.host = parseStringArgument("-H", args, ++i);
@@ -106,8 +103,8 @@ public class Main {
         obj.parse(args);
         if (captureJboss) {
             if (credentialStore) {
-                if(store != null && storepass != null && alias != null){
-                    password = RetrieveCredential.getInstance().getPassword(store,storepass,alias);
+                if (store != null && storepass != null && alias != null) {
+                    password = RetrieveCredential.getInstance().getPassword(store, storepass, alias);
                     //System.err.println(password);
                 }
             }
@@ -190,16 +187,11 @@ public class Main {
             FileOperation.getInstance().executeScript(tempfile);
             obj.deleteFile(tempfile);
         }
-        if(captureTomcat){
-            if(PID != null){
-                System.out.println(PID);
-                //JmxMBeanServerConnection.getInstance(PID).queryObject("Catalina:type=Server","serverInfo");
-                //JmxMBeanServerConnection.getInstance(PID).queryObject("Catalina:type=Connector,*","port");
-                //JmxMBeanServerConnection.getInstance(PID).queryObject("Catalina:type=ThreadPool,*","connectionTimeout");
-                TabularDataSupport tds = (javax.management.openmbean.TabularDataSupport) JmxMBeanServerConnection.getInstance(PID).queryObject("java.lang:type=Runtime", "SystemProperties");
-                System.out.println(tds.keySet());
-
-            }
+        if (captureTomcat) {
+            String tempfile = FileOperation.getInstance().createTempFile("capture-tomcat");
+            JmxMBeanServerConnection.getInstance().execute(tempfile);
+            FileOperation.getInstance().executeScript(tempfile);
+            obj.deleteFile(tempfile);
         }
     }
 
@@ -208,3 +200,4 @@ public class Main {
         file.delete();
     }
 }
+

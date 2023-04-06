@@ -1,6 +1,6 @@
-package org.jboss.health.stat;
+package org.health.jboss.stats;
 
-import org.jboss.health.report.CsvGenerator;
+import org.health.report.CsvGenerator;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 

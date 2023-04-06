@@ -1,4 +1,4 @@
-package org.jboss.health.report;
+package org.health.report;
 
 import org.apache.commons.io.FileUtils;
 import org.json.CDL;

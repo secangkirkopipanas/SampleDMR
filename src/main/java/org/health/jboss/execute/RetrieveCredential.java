@@ -1,4 +1,4 @@
-package org.jboss.health.execute;
+package org.health.jboss.execute;
 
 
 import org.wildfly.security.auth.server.IdentityCredentials;

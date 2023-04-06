@@ -1,6 +1,7 @@
-package org.jboss.health.stat;
+package org.health.jboss.stats;
 
-import org.jboss.health.report.CsvGenerator;
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import org.health.report.CsvGenerator;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 
@@ -10,18 +11,19 @@ import java.util.List;
 
 public class GetConnPool {
     private ModelControllerClient client;
-    public GetConnPool(ModelControllerClient client){
+
+    public GetConnPool(ModelControllerClient client) {
         this.client = client;
     }
 
-    public ModelNode getDataSourceCount(String dstype){
+    public ModelNode getDataSourceCount(String dstype) {
         ModelNode op = new ModelNode();
         op.get("operation").set("read-children-names");
         op.get("child-type").set(dstype);
 
         ModelNode address = op.get("address");
 
-        address.add("subsystem","datasources");
+        address.add("subsystem", "datasources");
         //address.add("data-source", "KeycloakDS");
         //address.add("type","memory");
 
@@ -30,14 +32,14 @@ public class GetConnPool {
         return op;
     }
 
-    public ModelNode isStat(String dsname){
+    public ModelNode isStat(String dsname) {
         ModelNode op = new ModelNode();
         op.get("operation").set("read-attribute");
         op.get("name").set("statistics-enabled");
 
         ModelNode address = op.get("address");
 
-        address.add("subsystem","datasources");
+        address.add("subsystem", "datasources");
         address.add("data-source", dsname);
         //address.add("type","memory");
 
@@ -46,14 +48,14 @@ public class GetConnPool {
         return op;
     }
 
-    public ModelNode getStatistics(String dsname, String dstype){
+    public ModelNode getStatistics(String dsname, String dstype) {
         ModelNode op = new ModelNode();
         op.get("operation").set("read-resource");
         //op.get("child-type").set("data-source");
 
         ModelNode address = op.get("address");
 
-        address.add("subsystem","datasources");
+        address.add("subsystem", "datasources");
         address.add(dstype, dsname);
         address.add("statistics", "pool");
 
@@ -62,13 +64,13 @@ public class GetConnPool {
         return op;
     }
 
-    public ModelNode getJndiName(String dsname, String dstype){
+    public ModelNode getJndiName(String dsname, String dstype) {
         ModelNode op = new ModelNode();
         op.get("operation").set("read-attribute");
 
         ModelNode address = op.get("address");
 
-        address.add("subsystem","datasources");
+        address.add("subsystem", "datasources");
         address.add(dstype, dsname);
         //address.add("statistics", "pool");
 
@@ -77,14 +79,14 @@ public class GetConnPool {
         return op;
     }
 
-    public ModelNode testConnection(String dsname, String dstype){
+    public ModelNode testConnection(String dsname, String dstype) {
         ModelNode op = new ModelNode();
         op.get("operation").set("test-connection-in-pool");
         //op.get("child-type").set("data-source");
 
         ModelNode address = op.get("address");
 
-        address.add("subsystem","datasources");
+        address.add("subsystem", "datasources");
         address.add(dstype, dsname);
         //address.add("statistics", "pool");
 
@@ -93,34 +95,32 @@ public class GetConnPool {
         return op;
     }
 
-    public void execute(){
-        List<String> dstypes = Arrays.asList("data-source","xa-data-source");
-        for (String dstype : dstypes) {
+    public void execute() {
+        List<String> dstypes = Arrays.asList("data-source", "xa-data-source");
+        for(String dstype:dstypes){
             try {
-                List<ModelNode> dsList = client.execute(getDataSourceCount(dstype)).get("result").asList();
-                if(!dsList.isEmpty()) {
-                    for (int i = 0; i < dsList.size(); i++) {
-                        String dsname = dsList.get(i).toString().replaceAll("\"", "");
-                        String jndiName = client.execute(getJndiName(dsname, dstype)).get("result").toString();
-                        client.execute(testConnection(dsname, dstype)).get("result").asBoolean();
-
-                        CsvGenerator.getInstance().generateReport("{\"Jndi Name\":"+jndiName+",\"ConnectionStatus\":"+client.execute(testConnection(dsname,dstype)).get("result").asBoolean()+",\"Statistics Enabled\":" +client.execute(isStat(dsname)).get("result").asBoolean()+"}","ConnectionStatus");
-
-                        if (client.execute(isStat(dsname)).get("result").asBoolean()) {
-                            //System.out.println("Connection Pool Statistics of "+ dsname);
-                            //System.out.println("{Statics " + jndiName + ": "
-                            //        + client.execute(getStatistics(dsname, dstype)).get("result").toJSONString(Boolean.TRUE) + " }");
-                            CsvGenerator.getInstance().generateReport(client.execute(getStatistics(dsname, dstype)).get("result").toJSONString(Boolean.TRUE),"Connection Statistics");
+                client.execute(getDataSourceCount(dstype)).get("result").asList().stream().forEach(
+                        modelNode -> {
+                            String dsname = modelNode.toString().replaceAll("\"","");
+                            try {
+                                String jndiName = client.execute(getJndiName(dsname, dstype)).get("result").toString();
+                                Boolean testConResult = client.execute(testConnection(dsname, dstype)).get("result").asBoolean(false);
+                                Boolean statEnabled = client.execute(isStat(dsname)).get("result").asBoolean(false);
+                                String str = String.format("{\"JndiName\": %s, \"ConnectionStatus\": %s}",jndiName,testConResult);
+                                System.out.println(str);
+                                CsvGenerator.getInstance().generateReport(str,"ConnectionStatus");
+                                if(testConResult && statEnabled){
+                                    String stat_str = client.execute(getStatistics(dsname, dstype)).get("result").toJSONString(Boolean.TRUE);
+                                    CsvGenerator.getInstance().generateReport(stat_str,"Statistics");
+                                }
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
-                        /*else {
-                            System.out.println("{Statistics is not enabled: " + jndiName + "}");
-                        }*/
-                    }
-                }
+                );
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-
     }
 }
