@@ -4,7 +4,6 @@ import com.opencsv.CSVWriter;
 import com.sun.management.OperatingSystemMXBean;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
-import org.health.jboss.execute.SSLFactoryClient;
 import sun.tools.jconsole.LocalVirtualMachine;
 
 import javax.management.*;
@@ -13,16 +12,12 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
-import java.net.Inet4Address;
 import java.nio.file.FileSystems;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.sun.tools.attach.VirtualMachine.attach;
@@ -55,55 +50,54 @@ public class JmxMBeanServerConnection {
         }
     }
 
-    private void queryObject(String mbean, String attribute) {
-        try {
-            ObjectName objectName = new ObjectName(mbean);
-            Set<ObjectInstance> beans = mBeanServerConnection.queryMBeans(objectName, null);
-            for (ObjectInstance bean : beans) {
-                getMbean(bean.getObjectName(), attribute);
-            }
-        } catch (MalformedObjectNameException | IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    private void queryObject(String mbean, String attribute) {
+//        try {
+//            ObjectName objectName = new ObjectName(mbean);
+//            Set<ObjectInstance> beans = mBeanServerConnection.queryMBeans(objectName, null);
+//            for (ObjectInstance bean : beans) {
+//                getMbean(bean.getObjectName(), attribute);
+//            }
+//        } catch (MalformedObjectNameException | IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
 
     private Set<ObjectInstance> queryMbean(String mbean) {
         try {
             ObjectName objectName = new ObjectName(mbean);
-            Set<ObjectInstance> beans = mBeanServerConnection.queryMBeans(objectName, null);
-            return beans;
+            return mBeanServerConnection.queryMBeans(objectName, null);
         } catch (MalformedObjectNameException | IOException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    private void getMbean(ObjectName jmxobject, String attribute) {
-        try {
-            if (attribute.equals("port")) {
-                Object value = mBeanServerConnection.getAttribute(jmxobject, attribute);
-                System.out.printf("\n%s : %s", attribute, value);
-                Boolean secure = (Boolean) mBeanServerConnection.getAttribute(jmxobject, "secure");
-                System.out.printf("\nSecure: %b\n", secure);
-                if (secure) {
-                    String cipher = (String) mBeanServerConnection.getAttribute(jmxobject, "ciphers");
-                    System.out.printf("\nCiphers: %s\n", cipher);
-                    Inet4Address addr = (Inet4Address) mBeanServerConnection.getAttribute(jmxobject, "address");
-                    if (!addr.toString().isEmpty()) {
-                        System.out.printf("\nAddress: %s\n", addr.getHostAddress());
-                        SSLFactoryClient.getInstance(addr.getHostAddress(), value.toString()).printSSLDetails();
-                    }
-                }
-            } else {
-                Object value = mBeanServerConnection.getAttribute(jmxobject, attribute);
-                System.out.printf("\n%s : %s\n", attribute, value);
-            }
-        } catch (IOException | MBeanException | AttributeNotFoundException | InstanceNotFoundException |
-                 ReflectionException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    private void getMbean(ObjectName jmxobject, String attribute) {
+//        try {
+//            if (attribute.equals("port")) {
+//                Object value = mBeanServerConnection.getAttribute(jmxobject, attribute);
+//                System.out.printf("\n%s : %s", attribute, value);
+//                Boolean secure = (Boolean) mBeanServerConnection.getAttribute(jmxobject, "secure");
+//                System.out.printf("\nSecure: %b\n", secure);
+//                if (secure) {
+//                    String cipher = (String) mBeanServerConnection.getAttribute(jmxobject, "ciphers");
+//                    System.out.printf("\nCiphers: %s\n", cipher);
+//                    Inet4Address addr = (Inet4Address) mBeanServerConnection.getAttribute(jmxobject, "address");
+//                    if (!addr.toString().isEmpty()) {
+//                        System.out.printf("\nAddress: %s\n", addr.getHostAddress());
+//                        SSLFactoryClient.getInstance(addr.getHostAddress(), value.toString()).printSSLDetails();
+//                    }
+//                }
+//            } else {
+//                Object value = mBeanServerConnection.getAttribute(jmxobject, attribute);
+//                System.out.printf("\n%s : %s\n", attribute, value);
+//            }
+//        } catch (IOException | MBeanException | AttributeNotFoundException | InstanceNotFoundException |
+//                 ReflectionException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     private String[] getMemory() {
         try {
@@ -114,13 +108,12 @@ public class JmxMBeanServerConnection {
             int heapmax = (int) heapUsage.getMax() / 1024;
             int heapcommit = (int) heapUsage.getCommitted() / 1024;
             float heaputil = (float) heapused / heapmax * 100;
-            System.out.println(String.format("Heap Utilization: %2.02f%s", heaputil, "%"));
-
+            System.out.printf("Heap Utilization: %2.02f%s%n", heaputil, "%");
 
             System.out.printf(
                     "\tUsed: %dKB\n" +
                             "\tCommitted: %dKB\n" +
-                            "\tMax: %dKB\n", heapused, heapcommit, heapused);
+                            "\tMax: %dKB\n", heapused, heapcommit, heapmax);
 
             return new String[]{String.valueOf(heapused), String.valueOf(heapcommit), String.valueOf(heapmax), String.format("%2.02f%s", heaputil, "%")};
 
@@ -132,9 +125,14 @@ public class JmxMBeanServerConnection {
     private String[] getCPU() {
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(
                 OperatingSystemMXBean.class);
-        System.out.printf("\n%12s %20s %20s %20s %20s\n", "CpuArchitecture", "CpuNumber", "PhysicalMemory", "SwapMemory", "OSVersion");
-        System.out.printf("%12s %20s %20s %20s %20s\n", osBean.getArch(), osBean.getAvailableProcessors(), osBean.getTotalPhysicalMemorySize(), osBean.getTotalSwapSpaceSize(), osBean.getVersion());
-        return new String[]{osBean.getArch(), String.valueOf(osBean.getAvailableProcessors()), String.valueOf(osBean.getFreePhysicalMemorySize()), String.valueOf(osBean.getTotalSwapSpaceSize()), osBean.getVersion()};
+        System.out.printf("\n%12s %20s %20s %20s %20s\n", "CpuArchitecture", "CpuNumber", "PhysicalMemory",
+                "SwapMemory", "OSName", "OSVersion");
+        System.out.printf("%12s %20s %20s %20s %20s\n", osBean.getArch(), osBean.getAvailableProcessors(),
+                osBean.getTotalPhysicalMemorySize(), osBean.getTotalSwapSpaceSize(), osBean.getName(),
+                osBean.getVersion());
+        return new String[]{osBean.getArch(), String.valueOf(osBean.getAvailableProcessors()),
+                String.valueOf(osBean.getFreePhysicalMemorySize()), String.valueOf(osBean.getTotalSwapSpaceSize()),
+                osBean.getName(), osBean.getVersion()};
     }
 
     private List<String[]> getDisk() {
@@ -162,106 +160,116 @@ public class JmxMBeanServerConnection {
         return diskInfo;
     }
 
-    public void execute(String script) {
-        try {
-            StringWriter writer = new StringWriter();
-            FileWriter fileWriter = new FileWriter("report.csv".toString());
-            //using custom delimiter and quote character
-            CSVWriter csvWriter = new CSVWriter(fileWriter);
+    private Map<String, String[]> getMBean(String mbeanName, String[] properties) {
+        final AtomicBoolean header = new AtomicBoolean(false);
+        final Map<String, String[]> mbeanMap = new HashMap<>();
 
+        queryMbean(mbeanName).forEach(
+                objectInstance -> {
+                    try {
+                        AttributeList attributeList = mBeanServerConnection.getAttributes(objectInstance.getObjectName(), properties);
+
+                        AtomicInteger idx = new AtomicInteger();
+                        String[] keys = new String[attributeList.size()];
+                        String[] values = new String[attributeList.size()];
+                        attributeList.asList().forEach(
+                                attribute -> {
+                                    keys[idx.get()] = String.valueOf(attribute.getName());
+                                    values[idx.get()] = String.valueOf(attribute.getValue());
+                                    idx.incrementAndGet();
+                                }
+                        );
+
+                        if (!header.get()) {
+                            mbeanMap.put("key", keys);
+                            header.set(true);
+                        }
+
+                        mbeanMap.put("value", values);
+
+                    } catch (InstanceNotFoundException |
+                             ReflectionException | IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
+
+        return mbeanMap;
+    }
+
+    public void execute(String csvFilePath) {
+        try {
+            FileWriter fileWriter = new FileWriter(csvFilePath);
+            CSVWriter csvWriter = new CSVWriter(fileWriter);
 
             Map<Integer, LocalVirtualMachine> vmlist = LocalVirtualMachine.getAllVirtualMachines();
             vmlist.forEach(
                     (integer, localVirtualMachine) -> {
                         if (localVirtualMachine.displayName().contains("org.apache.catalina.startup.Bootstrap")) {
                             getmBeanServerConnection(String.valueOf(localVirtualMachine.vmid()));
-                            List<String[]> temp = new ArrayList<>();
-                            temp.add(new String[]{"Heap Used", "Heap Commit", "Heap Max", "Heap Utilization"});
-                            temp.add(getMemory());
-                            temp.add(new String[]{"CpuArchitecture", "CpuNumber", "PhysicalMemory", "SwapMemory", "OSVersion"});
-                            temp.add(getCPU());
-                            temp.add(new String[]{"Total Size", "Used", "Availble", "Utilization", "FileStoreName", "MountPath"});
-                            temp.addAll(getDisk());
 
+                            List<String[]> records = new ArrayList<>();
 
-                            //queryObject("Catalina:type=Server", "serverInfo");
-                            //queryObject("java.lang:type=Runtime", "VmVersion");
-                            //queryObject("Catalina:type=Connector,*", "port");
-                            //queryObject("Catalina:type=SSLHostConfig,*", "enabledciphers");
-                            //queryObject("java.lang:type=Threading", "ThreadCount");
-                            //FileOperation.getInstance().executeScript(script+" "+String.valueOf(localVirtualMachine.vmid()));
+                            // Memory info
+                            records.add(new String[] {
+                                    "Heap Used", "Heap Commit", "Heap Max", "Heap Utilization"
+                            });
+                            records.add(getMemory());
+                            records.add(new String[] {});
 
+                            // CPU info
+                            records.add(new String[] {
+                                    "CPU Arch", "CPU Number", "Physical Memory", "Swap Memory", "OS Name", "OS Version"
+                            });
+                            records.add(getCPU());
+                            records.add(new String[] {});
 
-                            queryMbean("Catalina:type=Server").forEach(
-                                    objectInstance -> {
-                                        try {
-                                            AttributeList value = mBeanServerConnection.getAttributes(objectInstance.getObjectName(), new String[]{"serverInfo", "serverNumber"});
-                                            temp.add(getStringArrary(value.asList(),"key"));
-                                            temp.add(getStringArrary(value.asList(),"value"));
-                                        } catch (InstanceNotFoundException |
-                                                ReflectionException | IOException e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    }
-                            );
+                            // Disk info
+                            records.add(new String[] {
+                                    "Total Size", "Used", "Available", "Utilization", "Filestore Name", "Mount Path"
+                            });
+                            records.addAll(getDisk());
+                            records.add(new String[] {});
 
-                            queryMbean("java.lang:type=Runtime").forEach(
-                                    objectInstance -> {
-                                        try {
-                                            AttributeList value = mBeanServerConnection.getAttributes(objectInstance.getObjectName(), new String[]{"VmName", "VmVersion", "VmVendor", "Uptime"});
-                                            temp.add(getStringArrary(value.asList(),"key"));
-                                            temp.add(getStringArrary(value.asList(),"value"));
-                                        } catch (InstanceNotFoundException |
-                                                 ReflectionException | IOException e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    }
-                            );
+                            // Server info
+                            Map<String, String[]> serverInfoMap = getMBean("Catalina:type=Server", new String[] {
+                                    "serverInfo", "serverNumber"
+                            });
+                            records.add(new String[] {
+                                    "Server Info", "Server Number"
+                            });
+                            records.add(serverInfoMap.get("value"));
+                            records.add(new String[] {});
 
-                            final boolean[] header = { false };
-                            queryMbean("Catalina:type=Connector,*").forEach(
-                                    objectInstance -> {
-                                        try {
-                                            AttributeList value = mBeanServerConnection.getAttributes(objectInstance.getObjectName(), new String[]{"address","port","scheme","secure","stateName"});
-                                            if (!header[0]) {
-                                                temp.add(getStringArrary(value.asList(), "key"));
-                                                header[0] = true;
-                                            }
-                                            temp.add(getStringArrary(value.asList(),"value"));
-                                        } catch (InstanceNotFoundException |
-                                                 ReflectionException | IOException e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    }
-                            );
+                            // Runtime info
+                            Map<String, String[]> runtimeInfoMap = getMBean("java.lang:type=Runtime", new String[] {
+                                    "VmName", "VmVersion", "VmVendor", "Uptime"
+                            });
+                            records.add(new String[] {
+                                    "VM Name", "VM Version", "VM Vendor", "Uptime"
+                            });
+                            records.add(runtimeInfoMap.get("value"));
+                            records.add(new String[] {});
 
-                            csvWriter.writeAll(temp);
+                            // Connector (port) info
+                            Map<String, String[]> connectorInfoMap = getMBean("Catalina:type=Connector,*", new String[] {
+                                    "address", "port", "scheme", "secure", "stateName"
+                            });
+                            records.add(new String[] {
+                                    "Address", "Port", "Scheme", "Secured", "State Name"
+                            });
+                            records.add(connectorInfoMap.get("value"));
+
+                            csvWriter.writeAll(records);
                         }
                     }
             );
             csvWriter.close();
-            System.out.println(writer);
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-    }
-
-    private String[] getStringArrary(List<Attribute> attributeList, String type){
-        AtomicInteger idx = new AtomicInteger();
-        String[] value = new String[attributeList.size()];
-        attributeList.stream().forEach(
-                attribute -> {
-                    if(type.equalsIgnoreCase("Value")) {
-                        value[idx.get()] = String.valueOf(attribute.getValue());
-                    } else if (type.equalsIgnoreCase("Key")) {
-                        value[idx.get()] = String.valueOf(attribute.getName());
-                    }
-
-                    idx.incrementAndGet();
-                }
-        );
-        return value;
     }
 
 }

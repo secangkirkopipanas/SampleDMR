@@ -189,7 +189,7 @@ public class Main {
         }
         if (captureTomcat) {
             String tempfile = FileOperation.getInstance().createTempFile("capture-tomcat");
-            JmxMBeanServerConnection.getInstance().execute(tempfile);
+            JmxMBeanServerConnection.getInstance().execute("report.csv");
             FileOperation.getInstance().executeScript(tempfile);
             obj.deleteFile(tempfile);
         }
