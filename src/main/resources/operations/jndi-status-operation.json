@@ -1,0 +1,11 @@
+{
+  "operation": "read-attribute",
+  "name": "enabled",
+  "address": [
+    {
+      "subsystem": "datasources"
+    }
+  ],
+  "resolve-expressions": true,
+  "operations": true
+}

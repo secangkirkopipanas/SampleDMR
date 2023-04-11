@@ -1,0 +1,10 @@
+{
+  "operation": "read-children-names",
+  "child-type": "xa-data-source",
+  "address": [
+    {
+      "subsystem": "datasources"
+    }
+  ],
+  "operations": true
+}

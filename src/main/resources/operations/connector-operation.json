@@ -1,0 +1,20 @@
+{
+  "operation" : "query",
+  "address" : [
+    {
+      "socket-binding-group" : "standard-sockets"
+    },
+    {
+      "socket-binding" : "*"
+    }
+  ],
+  "select" : [
+    "name",
+    "bound-port",
+    "bound-address"
+  ],
+  "where" : [{
+    "bound" : "true"
+  }],
+  "operations" : true
+}

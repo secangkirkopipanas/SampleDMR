@@ -1,5 +1,6 @@
 package org.health;
 
+import org.health.jboss.JBossManagement;
 import org.health.jboss.execute.ConfigureTLS;
 import org.health.jboss.execute.DeployTLS;
 import org.health.jboss.execute.ExecuteDMR;
@@ -114,6 +115,9 @@ public class Main {
                 new GetHeap(client).execute();
                 new GetConnPool(client).execute();
                 new GetThread(client).execute();
+
+                JBossManagement.getInstance(client).captureJBossDetails();
+
             } else {
                 System.out.println("Please pass the following parameter to capture Jboss related parameters\n" +
                         "\t -H: hostname \n" +

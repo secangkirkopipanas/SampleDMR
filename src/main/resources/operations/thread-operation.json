@@ -1,0 +1,13 @@
+{
+  "operation": "read-resource",
+  "address": [
+    {
+      "subsystem": "io"
+    },
+    {
+      "worker": "default"
+    }
+  ],
+  "include-runtime": true,
+  "operations": true
+}

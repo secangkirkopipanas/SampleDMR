@@ -1,0 +1,9 @@
+{
+  "operation": "test-connection-in-pool",
+  "address": [
+    {
+      "subsystem": "datasources"
+    }
+  ],
+  "operations": true
+}

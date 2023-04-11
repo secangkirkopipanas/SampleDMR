@@ -1,0 +1,10 @@
+{
+  "operation": "read-attribute",
+  "address": [
+    {
+      "subsystem": "datasources"
+    }
+  ],
+  "name": "jndi-name",
+  "operations": true
+}
